@@ -30,14 +30,14 @@ export class EnrollmentsController {
     return this.enrollmentsService.findAll(studentId, courseId);
   }
 
-  // Punto 4: Consultar por estudiante (GET /enrollments/student/:studentId)
-  @Get('student/:studentId')
+  // Punto 4: GET /students/:studentId/enrollments (se mapea a /enrollments/students/:studentId)
+  @Get('students/:studentId/enrollments')
   findByStudent(@Param('studentId', ParseIntPipe) studentId: number) {
     return this.enrollmentsService.findByStudent(studentId);
   }
 
-  // Punto 4: Consultar por curso (GET /enrollments/course/:courseId)
-  @Get('course/:courseId')
+  // Punto 4: GET /courses/:courseId/enrollments (se mapea a /enrollments/courses/:courseId)
+  @Get('courses/:courseId/enrollments')
   findByCourse(@Param('courseId', ParseIntPipe) courseId: number) {
     return this.enrollmentsService.findByCourse(courseId);
   }
