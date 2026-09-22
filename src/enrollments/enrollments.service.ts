@@ -10,7 +10,7 @@ import { CoursesService } from '../courses/courses.service';
 
 export type Enrollment = {
   id: number;
-  studentId: number;
+  studentId: string;
   courseId: number;
 };
 
@@ -25,8 +25,8 @@ export class EnrollmentsService {
   ) {}
 
   create(dto: CreateEnrollmentDto): Enrollment {
-    // 1. Validar que el estudiante exista (se convierte studentId a string para evitar ts(2345))
-    const student = this.studentsService.findOne(dto.studentId.toString() as any);
+    // 1. Validar que el estudiante exista (pasa el UUID directamente)
+    const student = this.studentsService.findOne(dto.studentId);
     if (!student) {
       throw new NotFoundException(`El estudiante con ID ${dto.studentId} no existe`);
     }
@@ -36,8 +36,8 @@ export class EnrollmentsService {
       throw new BadRequestException(`El estudiante con ID ${dto.studentId} está inactivo`);
     }
 
-    // 3. Validar que el curso exista (se convierte courseId a string si el servicio lo requiere)
-    const course = this.coursesService.findOne(dto.courseId.toString() as any);
+    // 3. Validar que el curso exista (pasa el número directamente)
+    const course = this.coursesService.findOne(dto.courseId);
     if (!course) {
       throw new NotFoundException(`El curso con ID ${dto.courseId} no existe`);
     }
@@ -60,7 +60,7 @@ export class EnrollmentsService {
     return newEnrollment;
   }
 
-  findAll(studentId?: number, courseId?: number): Enrollment[] {
+  findAll(studentId?: string, courseId?: number): Enrollment[] {
     return this.enrollments.filter((e) => {
       const matchStudent = studentId ? e.studentId === studentId : true;
       const matchCourse = courseId ? e.courseId === courseId : true;
@@ -68,7 +68,7 @@ export class EnrollmentsService {
     });
   }
 
-  findByStudent(studentId: number): Enrollment[] {
+  findByStudent(studentId: string): Enrollment[] {
     return this.enrollments.filter((e) => e.studentId === studentId);
   }
 

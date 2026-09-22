@@ -1,9 +1,9 @@
-import { IsInt, IsPositive } from 'class-validator';
+import { IsInt, IsNotEmpty, IsPositive, IsString } from 'class-validator';
 
 export class CreateEnrollmentDto {
-  @IsInt()
-  @IsPositive()
-  studentId: number;
+  @IsString()
+  @IsNotEmpty()
+  studentId: string;
 
   @IsInt()
   @IsPositive()
