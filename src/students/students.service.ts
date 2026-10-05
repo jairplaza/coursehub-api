@@ -4,57 +4,60 @@ import {
   ConflictException, 
   BadRequestException 
 } from '@nestjs/common';
-import { Student } from './interfaces/student.interface';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Student } from './entities/student.entity';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { FilterStudentsDto } from './dto/filter-students.dto';
 
 @Injectable()
 export class StudentsService {
-  private students: Student[] = [];
+  constructor(
+    @InjectRepository(Student)
+    private readonly studentRepository: Repository<Student>,
+  ) {}
 
-  // 1. Crear estudiante (valida correo único)
-  create(createStudentDto: CreateStudentDto): Student {
-    const emailExists = this.students.some((s) => s.email === createStudentDto.email);
+  // 1. Crear estudiante (valida correo único en la base de datos)
+  async create(createStudentDto: CreateStudentDto): Promise<Student> {
+    const emailExists = await this.studentRepository.findOne({ 
+      where: { email: createStudentDto.email } 
+    });
+    
     if (emailExists) {
       throw new ConflictException(`El correo ${createStudentDto.email} ya está registrado`);
     }
 
-    const newStudent: Student = {
-      id: crypto.randomUUID(),
+    const newStudent = this.studentRepository.create({
       ...createStudentDto,
       isActive: createStudentDto.isActive ?? true,
-    };
+    });
 
-    this.students.push(newStudent);
-    return newStudent;
+    return await this.studentRepository.save(newStudent);
   }
 
   // 2. Consultar todos con filtros opcionales combinados
-  findAll(filters?: FilterStudentsDto): Student[] {
-    let result = this.students;
+  async findAll(filters?: FilterStudentsDto): Promise<Student[]> {
+    const where: any = {};
 
     if (filters?.career) {
-      const careerFilter = filters.career.toLowerCase();
-      result = result.filter(
-        (s) => s.career.toLowerCase() === careerFilter,
-      );
+      where.career = filters.career; // TypeORM permite filtrar directamente
     }
 
     if (filters?.semester !== undefined) {
-      result = result.filter((s) => s.semester === filters.semester);
+      where.semester = filters.semester;
     }
 
     if (filters?.isActive !== undefined) {
-      result = result.filter((s) => s.isActive === filters.isActive);
+      where.isActive = filters.isActive;
     }
 
-    return result;
+    return await this.studentRepository.find({ where });
   }
 
   // 3. Consultar por ID
-  findOne(id: string): Student {
-    const student = this.students.find((s) => s.id === id);
+  async findOne(id: string): Promise<Student> {
+    const student = await this.studentRepository.findOne({ where: { id } });
     if (!student) {
       throw new NotFoundException(`Estudiante con ID ${id} no encontrado`);
     }
@@ -62,44 +65,39 @@ export class StudentsService {
   }
 
   // 4. Modificación parcial (protege el ID y valida email único)
-  update(id: string, updateStudentDto: UpdateStudentDto): Student {
-    const student = this.findOne(id);
+  async update(id: string, updateStudentDto: UpdateStudentDto): Promise<Student> {
+    const student = await this.findOne(id);
 
     if (updateStudentDto.email && updateStudentDto.email !== student.email) {
-      const emailExists = this.students.some((s) => s.email === updateStudentDto.email);
+      const emailExists = await this.studentRepository.findOne({ 
+        where: { email: updateStudentDto.email } 
+      });
       if (emailExists) {
         throw new ConflictException(`El correo ${updateStudentDto.email} ya está registrado`);
       }
     }
 
-    const index = this.students.findIndex((s) => s.id === id);
+    // Fusiona los nuevos datos con el estudiante encontrado
+    Object.assign(student, updateStudentDto);
 
-    const updatedStudent: Student = {
-      ...student,
-      ...updateStudentDto,
-      id: student.id,
-    };
-
-    this.students[index] = updatedStudent;
-    return updatedStudent;
+    return await this.studentRepository.save(student);
   }
 
   // 5. Cambiar únicamente el estado activo/inactivo
-  changeStatus(id: string, isActive?: boolean): Student {
-    const student = this.findOne(id);
+  async changeStatus(id: string, isActive?: boolean): Promise<Student> {
+    const student = await this.findOne(id);
     student.isActive = isActive !== undefined ? isActive : !student.isActive;
-    return student;
+    return await this.studentRepository.save(student);
   }
 
   // 6. Eliminar (Impide eliminar si está inactivo)
-  remove(id: string): void {
-    const student = this.findOne(id);
+  async remove(id: string): Promise<void> {
+    const student = await this.findOne(id);
 
     if (!student.isActive) {
       throw new BadRequestException('No se puede eliminar a un estudiante inactivo');
     }
 
-    this.students = this.students.filter((s) => s.id !== id);
+    await this.studentRepository.remove(student);
   }
 }
-

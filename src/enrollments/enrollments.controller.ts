@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Delete,
-  Query,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query } from '@nestjs/common';
 import { EnrollmentsService } from './enrollments.service';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 
@@ -16,8 +7,8 @@ export class EnrollmentsController {
   constructor(private readonly enrollmentsService: EnrollmentsService) {}
 
   @Post()
-  create(@Body() createEnrollmentDto: CreateEnrollmentDto) {
-    return this.enrollmentsService.create(createEnrollmentDto);
+  create(@Body() dto: CreateEnrollmentDto) {
+    return this.enrollmentsService.create(dto);
   }
 
   @Get()
@@ -26,8 +17,8 @@ export class EnrollmentsController {
     @Query('courseId') courseId?: string,
   ) {
     return this.enrollmentsService.findAll(
-      studentId,
-      courseId ? +courseId : undefined,
+      studentId, 
+      courseId ? Number(courseId) : undefined
     );
   }
 
@@ -37,12 +28,12 @@ export class EnrollmentsController {
   }
 
   @Get('course/:courseId')
-  findByCourse(@Param('courseId', ParseIntPipe) courseId: number) {
-    return this.enrollmentsService.findByCourse(courseId);
+  findByCourse(@Param('courseId') courseId: string) {
+    return this.enrollmentsService.findByCourse(Number(courseId));
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.enrollmentsService.remove(id);
+  remove(@Param('id') id: string) {
+    return this.enrollmentsService.remove(Number(id));
   }
 }

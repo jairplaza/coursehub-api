@@ -1,15 +1,13 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm'; // 1. Importar
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Student } from './entities/student.entity';
 import { StudentsController } from './students.controller';
 import { StudentsService } from './students.service';
-import { Student } from './student.entity'; // 2. Importar la entidad
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Student]), // 3. Registrar la entidad aquí
-  ],
+  imports: [TypeOrmModule.forFeature([Student])],
   controllers: [StudentsController],
   providers: [StudentsService],
-  exports: [StudentsService], // Útil si otros módulos necesitan consultarlo después
+  exports: [StudentsService], // <-- ¡Importante para que EnrollmentsService pueda usarlo!
 })
 export class StudentsModule {}

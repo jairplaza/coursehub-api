@@ -1,10 +1,11 @@
-import {
-  IsEmail,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
+import { 
+  IsEmail, 
+  IsInt, 
+  IsOptional, 
+  IsString, 
+  IsBoolean,
+  Max, 
+  Min 
 } from 'class-validator';
 
 export class UpdateStudentDto {
@@ -30,6 +31,11 @@ export class UpdateStudentDto {
   @Min(1)
   @Max(10)
   semester?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
+
 
 

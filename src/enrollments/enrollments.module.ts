@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm'; // 1. Importar TypeOrmModule
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { EnrollmentsController } from './enrollments.controller';
 import { EnrollmentsService } from './enrollments.service';
-import { Enrollment } from './entities/enrollment.entity'; // 2. Importar la entidad
+import { Enrollment } from './entities/enrollment.entity';
 import { StudentsModule } from '../students/students.module';
 import { CoursesModule } from '../courses/courses.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Enrollment]), // 3. Registrar el repositorio de la entidad
-    StudentsModule, 
+    TypeOrmModule.forFeature([Enrollment]),
+    StudentsModule,
     CoursesModule,
   ],
   controllers: [EnrollmentsController],

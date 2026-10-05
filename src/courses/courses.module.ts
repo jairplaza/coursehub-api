@@ -5,9 +5,11 @@ import { CoursesController } from './courses.controller';
 import { CoursesService } from './courses.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Course])], // 1
+  imports: [TypeOrmModule.forFeature([Course])],
   controllers: [CoursesController],
   providers: [CoursesService],
+  exports: [CoursesService], // <-- ¡Añade esta línea!
 })
 export class CoursesModule {}
+
 

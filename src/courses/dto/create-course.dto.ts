@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, MinLength } from 'class-validator';
+import { IsString, IsNotEmpty, MinLength, IsInt } from 'class-validator';
 
 export class CreateCourseDto {
   @IsString()
@@ -9,4 +9,10 @@ export class CreateCourseDto {
   @IsString()
   @IsNotEmpty()
   readonly description: string;
+
+  @IsInt()
+  readonly credits: number;
+
+  @IsInt()
+  readonly semester: number;
 }

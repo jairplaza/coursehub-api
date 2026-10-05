@@ -20,18 +20,17 @@ export class EnrollmentsService {
     private readonly coursesService: CoursesService,
   ) {}
 
-  // 1. Crear matrícula con validaciones persistentes
   async create(dto: CreateEnrollmentDto): Promise<Enrollment> {
-    // Validar que el estudiante exista y esté activo
+    // 1. Validar si el estudiante existe y si está activo (lanza 404 o 400)
     const student = await this.studentsService.findOne(dto.studentId);
     if (!student.isActive) {
-      throw new BadRequestException(`El estudiante con ID ${dto.studentId} está inactivo`);
+      throw new BadRequestException(`El estudiante con ID ${dto.studentId} está inactivo y no puede matricularse.`);
     }
 
-    // Validar que el curso exista
+    // 2. Validar si el curso existe (lanza 404)
     const course = await this.coursesService.findOne(dto.courseId);
 
-    // Validar que no exista matrícula duplicada en la base de datos
+    // 3. Validar si ya existe la matrícula (lanza 409)
     const exists = await this.enrollmentRepository.findOne({
       where: {
         student: { id: dto.studentId },
@@ -40,9 +39,10 @@ export class EnrollmentsService {
     });
 
     if (exists) {
-      throw new ConflictException('El estudiante ya está matriculado en este curso');
+      throw new ConflictException('El estudiante ya está matriculado en este curso.');
     }
 
+    // 4. Crear y guardar
     const newEnrollment = this.enrollmentRepository.create({
       student,
       course,
@@ -51,7 +51,6 @@ export class EnrollmentsService {
     return await this.enrollmentRepository.save(newEnrollment);
   }
 
-  // 2. Obtener todas las matrículas (con filtros opcionales)
   async findAll(studentId?: string, courseId?: number): Promise<Enrollment[]> {
     const where: any = {};
     if (studentId) where.student = { id: studentId };
@@ -60,33 +59,29 @@ export class EnrollmentsService {
     return await this.enrollmentRepository.find({ where });
   }
 
-  // 3. Obtener una matrícula por ID
   async findOne(id: number): Promise<Enrollment> {
     const enrollment = await this.enrollmentRepository.findOne({ where: { id } });
     if (!enrollment) {
-      throw new NotFoundException(`La matrícula con ID ${id} no existe`);
+      throw new NotFoundException(`La matrícula con ID ${id} no existe.`);
     }
     return enrollment;
   }
 
-  // 4. Buscar matrículas por estudiante
   async findByStudent(studentId: string): Promise<Enrollment[]> {
     return await this.enrollmentRepository.find({
       where: { student: { id: studentId } },
     });
   }
 
-  // 5. Buscar matrículas por curso
   async findByCourse(courseId: number): Promise<Enrollment[]> {
     return await this.enrollmentRepository.find({
       where: { course: { id: courseId } },
     });
   }
 
-  // 6. Eliminar (cancelar) matrícula
   async remove(id: number): Promise<{ message: string }> {
     const enrollment = await this.findOne(id);
     await this.enrollmentRepository.remove(enrollment);
-    return { message: `Matrícula con ID ${id} cancelada con éxito` };
+    return { message: `Matrícula con ID ${id} cancelada con éxito.` };
   }
 }
