@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Enrollment } from './entities/enrollment.entity';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
+import { EnrollmentsQueryDto } from './dto/enrollments-query.dto';
 import { StudentsService } from '../students/students.service';
 import { CoursesService } from '../courses/courses.service';
 
@@ -51,12 +52,52 @@ export class EnrollmentsService {
     return await this.enrollmentRepository.save(newEnrollment);
   }
 
-  async findAll(studentId?: string, courseId?: number): Promise<Enrollment[]> {
-    const where: any = {};
-    if (studentId) where.student = { id: studentId };
-    if (courseId) where.course = { id: courseId };
+  async findAll(query: EnrollmentsQueryDto) {
+    const { search, studentId, courseId, activeOnly, page, limit } = query;
 
-    return await this.enrollmentRepository.find({ where });
+    const qb = this.enrollmentRepository
+      .createQueryBuilder('enrollment')
+      .leftJoinAndSelect('enrollment.student', 'student')
+      .leftJoinAndSelect('enrollment.course', 'course');
+
+    // Búsqueda textual por nombre de estudiante o título de curso con parámetros seguros (ILIKE)
+    if (search) {
+      qb.andWhere('(student.name ILIKE :search OR course.title ILIKE :search)', {
+        search: `%${search.trim()}%`,
+      });
+    }
+
+    // Filtro por ID de estudiante
+    if (studentId) {
+      qb.andWhere('student.id = :studentId', { studentId });
+    }
+
+    // Filtro por ID de curso
+    if (courseId) {
+      qb.andWhere('course.id = :courseId', { courseId });
+    }
+
+    // Filtro por estudiantes activos
+    if (activeOnly === 'true') {
+      qb.andWhere('student.isActive = :active', { active: true });
+    }
+
+    // Ordenamiento estable y paginación
+    qb.orderBy('enrollment.id', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
+
+    return {
+      items,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: number): Promise<Enrollment> {

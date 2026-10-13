@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Query } from '@nestjs/common';
 import { EnrollmentsService } from './enrollments.service';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
+import { EnrollmentsQueryDto } from './dto/enrollments-query.dto';
 
 @Controller('enrollments')
 export class EnrollmentsController {
@@ -12,22 +13,16 @@ export class EnrollmentsController {
   }
 
   @Get()
-  findAll(
-    @Query('studentId') studentId?: string,
-    @Query('courseId') courseId?: string,
-  ) {
-    return this.enrollmentsService.findAll(
-      studentId, 
-      courseId ? Number(courseId) : undefined
-    );
+  findAll(@Query() query: EnrollmentsQueryDto) {
+    return this.enrollmentsService.findAll(query);
   }
 
-  @Get('student/:studentId')
+  @Get('/student/:studentId')
   findByStudent(@Param('studentId') studentId: string) {
     return this.enrollmentsService.findByStudent(studentId);
   }
 
-  @Get('course/:courseId')
+  @Get('/course/:courseId')
   findByCourse(@Param('courseId') courseId: string) {
     return this.enrollmentsService.findByCourse(Number(courseId));
   }

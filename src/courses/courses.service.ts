@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Course } from './entities/course.entity';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
+import { CoursesQueryDto } from './dto/courses-query.dto';
 
 @Injectable()
 export class CoursesService {
@@ -25,8 +26,30 @@ export class CoursesService {
     return await this.courseRepository.save(newCourse);
   }
 
-  async findAll(): Promise<Course[]> {
-    return await this.courseRepository.find();
+  async findAll(query: CoursesQueryDto) {
+    const { level, page, limit, sortBy, order } = query;
+
+    const whereCondition: any = {};
+    if (level) {
+      whereCondition.level = level;
+    }
+
+    const [items, total] = await this.courseRepository.findAndCount({
+      where: whereCondition,
+      order: { [sortBy]: order },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return {
+      items,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: number): Promise<Course> {
