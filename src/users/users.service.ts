@@ -14,6 +14,15 @@ export class UsersService {
     return this.usersRepository.findOneBy({ email });
   }
 
+  // Método específico para incluir el hash excluido por defecto en el login
+  findByEmailWithPassword(email: string) {
+    return this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.email = :email', { email })
+      .addSelect('user.passwordHash')
+      .getOne();
+  }
+
   async create(email: string, passwordHash: string): Promise<User> {
     const existing = await this.findByEmail(email);
     if (existing) throw new ConflictException('Email already registered');
@@ -22,4 +31,5 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 }
+
 
