@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { CoursesQueryDto } from './dto/courses-query.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('courses')
+@UseGuards(AuthGuard('jwt')) // <--- Protege todas las rutas de este controlador
 export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
 

@@ -20,6 +20,8 @@ import { AuthModule } from './auth/auth.module';
         DATABASE_NAME: Joi.string().required(),
         DATABASE_USER: Joi.string().required(),
         DATABASE_PASSWORD: Joi.string().allow('').required(),
+        JWT_SECRET: Joi.string().min(32).required(),
+        JWT_EXPIRES_IN: Joi.string().default('45m'),
       }),
     }),
     TypeOrmModule.forRootAsync({
@@ -43,3 +45,4 @@ import { AuthModule } from './auth/auth.module';
   ],
 })
 export class AppModule {}
+
