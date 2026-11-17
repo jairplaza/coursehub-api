@@ -1,20 +1,21 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Course } from './entities/course.entity';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { CoursesQueryDto } from './dto/courses-query.dto';
+import { UserRole } from '../users/user-role.enum';
 
 @Injectable()
 export class CoursesService {
   constructor(
     @InjectRepository(Course)
-    private readonly courseRepository: Repository<Course>,
+    private readonly coursesRepository: Repository<Course>,
   ) {}
 
-  async create(createCourseDto: CreateCourseDto): Promise<Course> {
-    const courseExists = await this.courseRepository.findOne({
+  async create(createCourseDto: CreateCourseDto, actor: any): Promise<Course> {
+    const courseExists = await this.coursesRepository.findOne({
       where: { title: createCourseDto.title },
     });
 
@@ -22,8 +23,11 @@ export class CoursesService {
       throw new ConflictException(`Ya existe un curso con el título "${createCourseDto.title}"`);
     }
 
-    const newCourse = this.courseRepository.create(createCourseDto);
-    return await this.courseRepository.save(newCourse);
+    const newCourse = this.coursesRepository.create({
+      ...createCourseDto,
+      createdByUserId: actor.id, // Asigna el ID del usuario autenticado como creador
+    });
+    return await this.coursesRepository.save(newCourse);
   }
 
   async findAll(query: CoursesQueryDto) {
@@ -34,7 +38,7 @@ export class CoursesService {
       whereCondition.level = level;
     }
 
-    const [items, total] = await this.courseRepository.findAndCount({
+    const [items, total] = await this.coursesRepository.findAndCount({
       where: whereCondition,
       order: { [sortBy]: order },
       skip: (page - 1) * limit,
@@ -53,18 +57,26 @@ export class CoursesService {
   }
 
   async findOne(id: number): Promise<Course> {
-    const course = await this.courseRepository.findOne({ where: { id } });
+    const course = await this.coursesRepository.findOne({ where: { id } });
     if (!course) {
       throw new NotFoundException(`Curso con ID ${id} no encontrado`);
     }
     return course;
   }
 
-  async update(id: number, updateCourseDto: UpdateCourseDto): Promise<Course> {
+  async update(id: number, updateCourseDto: UpdateCourseDto, actor: any): Promise<Course> {
     const course = await this.findOne(id);
 
+    // Validación de propiedad y roles de la Sesión 19
+    const canManageAny = actor.role === UserRole.ADMIN;
+    const isOwner = course.createdByUserId === actor.id;
+
+    if (!canManageAny && !isOwner) {
+      throw new ForbiddenException('No tienes permiso para modificar este curso');
+    }
+
     if (updateCourseDto.title && updateCourseDto.title !== course.title) {
-      const courseExists = await this.courseRepository.findOne({
+      const courseExists = await this.coursesRepository.findOne({
         where: { title: updateCourseDto.title },
       });
       if (courseExists) {
@@ -73,11 +85,12 @@ export class CoursesService {
     }
 
     Object.assign(course, updateCourseDto);
-    return await this.courseRepository.save(course);
+    return await this.coursesRepository.save(course);
   }
 
   async remove(id: number): Promise<void> {
     const course = await this.findOne(id);
-    await this.courseRepository.remove(course);
+    await this.coursesRepository.remove(course);
   }
 }
+

@@ -43,3 +43,10 @@ Crea un archivo `.env` en la raíz del proyecto basándote en la plantilla del a
 | **Enrollments** | `GET` | `/enrollments/student/:studentId` | Consultar matrículas de un estudiante | **Param**: `studentId` (string / UUID)[cite: 12] |
 | **Enrollments** | `GET` | `/enrollments/course/:courseId` | Consultar matrículas de un curso | **Param**: `courseId` (number)[cite: 12] |
 | **Enrollments** | `DELETE` | `/enrollments/:id` | Cancelar/eliminar una matrícula por ID | **Param**: `id` (number)[cite: 12] |
+
+## 🔒 Consideraciones de Seguridad y Producción (Sesión 20)
+
+- **HTTPS / TLS:** Fuera del entorno de desarrollo local (`http://localhost`), **la API requiere obligatoriamente HTTPS y terminación TLS** (gestionada por un proxy inverso, balanceador de carga o plataforma de despliegue) para proteger los tokens Bearer y credenciales en tránsito.
+- **Variables de Entorno:** Los secretos (como `JWT_SECRET` y credenciales de base de datos) residen exclusivamente en las variables de entorno del servidor y nunca deben ser hardcodeados.
+- **Control de Tasas (Rate Limiting):** Rutas críticas como el inicio de sesión (`POST /auth/login`) están limitadas estrictamente a 5 intentos por minuto mediante `@nestjs/throttler` para mitigar ataques de fuerza bruta.
+- **CORS:** Configurado explícitamente en `main.ts` para aceptar únicamente los orígenes web autorizados del cliente.

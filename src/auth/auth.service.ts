@@ -35,12 +35,18 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    return { id: user.id, email: user.email, createdAt: user.createdAt };
+    return user;
   }
 
   async login(dto: LoginDto) {
     const user = await this.validateCredentials(dto.email, dto.password);
-    const payload: JwtPayload = { sub: user.id, email: user.email };
+    
+    // Incluimos 'role' en el payload para que el RolesGuard pueda leerlo del JWT
+    const payload: JwtPayload = { 
+      sub: user.id, 
+      email: user.email, 
+      role: user.role 
+    };
 
     return {
       accessToken: await this.jwtService.signAsync(payload),
@@ -48,6 +54,3 @@ export class AuthService {
     };
   }
 }
-
-
-

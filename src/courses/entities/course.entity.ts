@@ -12,6 +12,11 @@ export class Course {
   @Column()
   description: string;
 
+  @Column({ nullable: true })
+  createdByUserId: number; // <--- Esta columna registra quién creó el curso
+
   @OneToMany(() => Enrollment, (enrollment) => enrollment.course)
   enrollments: Enrollment[];
 }
+
+

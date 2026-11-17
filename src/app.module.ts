@@ -1,7 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common'; // <-- 1. Añadir NestModule y MiddlewareConsumer aquí
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import * as Joi from 'joi';
+import { RequestLoggerMiddleware } from './common/middlewares/request-logger.middleware'; // <-- 2. Importar tu middleware
 import { CoursesModule } from './courses/courses.module';
 import { StudentsModule } from './students/students.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
@@ -37,12 +40,27 @@ import { AuthModule } from './auth/auth.module';
         synchronize: config.getOrThrow<string>('NODE_ENV') === 'development',
       }),
     }),
+    ThrottlerModule.forRoot([{
+      ttl: 60_000, 
+      limit: 20,   
+    }]),
     CoursesModule,
     StudentsModule,
     EnrollmentsModule,
     UsersModule,
     AuthModule,
   ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
-export class AppModule {}
-
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(RequestLoggerMiddleware)
+      .forRoutes('*'); // Aplica el middleware de registro a todas las rutas
+  }
+}
