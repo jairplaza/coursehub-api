@@ -1,10 +1,10 @@
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common'; // <-- 1. Añadir NestModule y MiddlewareConsumer aquí
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import * as Joi from 'joi';
-import { RequestLoggerMiddleware } from './common/middlewares/request-logger.middleware'; // <-- 2. Importar tu middleware
+import { RequestLoggerMiddleware } from './common/middlewares/request-logger.middleware';
 import { CoursesModule } from './courses/courses.module';
 import { StudentsModule } from './students/students.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
@@ -15,8 +15,11 @@ import { AuthModule } from './auth/auth.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
       validationSchema: Joi.object({
-        NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
+        NODE_ENV: Joi.string()
+          .valid('development', 'test', 'production')
+          .default('development'),
         PORT: Joi.number().port().default(3000),
         DATABASE_HOST: Joi.string().required(),
         DATABASE_PORT: Joi.number().port().default(5432),
@@ -37,13 +40,17 @@ import { AuthModule } from './auth/auth.module';
         password: config.getOrThrow<string>('DATABASE_PASSWORD'),
         database: config.getOrThrow<string>('DATABASE_NAME'),
         autoLoadEntities: true,
-        synchronize: config.getOrThrow<string>('NODE_ENV') === 'development',
+        synchronize: ['development', 'test'].includes(
+          config.getOrThrow<string>('NODE_ENV'),
+        ),
       }),
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60_000, 
-      limit: 20,   
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60_000,
+        limit: 20,
+      },
+    ]),
     CoursesModule,
     StudentsModule,
     EnrollmentsModule,
@@ -59,8 +66,6 @@ import { AuthModule } from './auth/auth.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(RequestLoggerMiddleware)
-      .forRoutes('*'); // Aplica el middleware de registro a todas las rutas
+    consumer.apply(RequestLoggerMiddleware).forRoutes('*');
   }
 }
