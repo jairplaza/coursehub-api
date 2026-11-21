@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { COURSE_REPOSITORY } from '../domain/course.repository';
@@ -9,8 +10,8 @@ describe('UpdateCourseUseCase', () => {
   let useCase: UpdateCourseUseCase;
 
   const courses = {
-    findById: jest.fn(),
-    save: jest.fn(),
+    findById: jest.fn<(id: number) => Promise<Course | null>>(),
+    save: jest.fn<(course: Course) => Promise<Course>>(),
   };
 
   beforeEach(async () => {

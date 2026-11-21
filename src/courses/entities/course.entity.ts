@@ -1,5 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
-import { Enrollment } from '../../enrollments/entities/enrollment.entity';
+import type { Enrollment } from '../../enrollments/entities/enrollment.entity';
 
 @Entity('courses')
 export class Course {
@@ -15,7 +15,7 @@ export class Course {
   @Column({ nullable: true })
   createdByUserId: number; // <--- Esta columna registra quién creó el curso
 
-  @OneToMany(() => Enrollment, (enrollment) => enrollment.course)
+  @OneToMany('Enrollment', 'course')
   enrollments: Enrollment[];
 }
 

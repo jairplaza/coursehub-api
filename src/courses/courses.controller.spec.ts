@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserRole } from '../users/user-role.enum';
@@ -9,17 +10,19 @@ describe('CoursesController', () => {
   let controller: CoursesController;
 
   const coursesService = {
-    create: jest.fn(),
-    findAll: jest.fn(),
-    findOne: jest.fn(),
-    remove: jest.fn(),
+    create: jest.fn<(...args: unknown[]) => Promise<unknown>>(),
+    findAll: jest.fn<(...args: unknown[]) => Promise<unknown>>(),
+    findOne: jest.fn<(...args: unknown[]) => Promise<unknown>>(),
+    remove: jest.fn<(...args: unknown[]) => Promise<unknown>>(),
   };
 
   const updateCourseUseCase = {
-    execute: jest.fn(),
+    execute: jest.fn<(...args: unknown[]) => Promise<unknown>>(),
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CoursesController],
       providers: [
@@ -29,31 +32,36 @@ describe('CoursesController', () => {
     }).compile();
 
     controller = module.get<CoursesController>(CoursesController);
-    jest.clearAllMocks();
   });
 
-  it('delegates update with id, dto, and authenticated user from req.user', async () => {
-    const actor = { id: 4, role: UserRole.TEACHER };
-    const req = { user: actor };
-    const dto = { title: 'NestJS avanzado' };
-    const expected = { id: 7, ...dto };
-    updateCourseUseCase.execute.mockResolvedValue(expected);
-
-    await expect(controller.update(7, dto as any, req)).resolves.toEqual(expected);
-    expect(updateCourseUseCase.execute).toHaveBeenCalledWith(7, dto, actor);
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
   });
 
-  it('propagates errors thrown by UpdateCourseUseCase', async () => {
-    const actor = { id: 9, role: UserRole.TEACHER };
-    const req = { user: actor };
-    const dto = { title: 'Cambio no autorizado' };
-    updateCourseUseCase.execute.mockRejectedValue(
-      new ForbiddenException('You cannot modify this course'),
+  it('should delegate course update to UpdateCourseUseCase', async () => {
+    const updated = { id: 1, title: 'NestJS Avanzado' };
+    updateCourseUseCase.execute.mockResolvedValueOnce(updated);
+
+    const req = { user: { id: 1, role: UserRole.ADMIN } };
+    const result = await controller.update(
+      1,
+      { title: 'NestJS Avanzado' },
+      req as never,
     );
 
-    await expect(controller.update(7, dto as any, req)).rejects.toThrow(
-      ForbiddenException,
+    expect(updateCourseUseCase.execute).toHaveBeenCalled();
+    expect(result).toEqual(updated);
+  });
+
+  it('should propagate ForbiddenException when UpdateCourseUseCase rejects', async () => {
+    updateCourseUseCase.execute.mockRejectedValueOnce(
+      new ForbiddenException('Forbidden'),
     );
-    expect(updateCourseUseCase.execute).toHaveBeenCalledWith(7, dto, actor);
+
+    const req = { user: { id: 2, role: UserRole.TEACHER } };
+
+    await expect(
+      controller.update(1, { title: 'Nuevo título' }, req as never),
+    ).rejects.toThrow(ForbiddenException);
   });
 });

@@ -80,3 +80,21 @@ Las pruebas E2E se ejecutan con **Jest** y **Supertest** contra una base de dato
 
 ```cmd
 set NODE_ENV=test&& npm run test:e2e
+
+# coursehub-api
+
+API backend desarrollada con NestJS, TypeScript, TypeORM y PostgreSQL.
+
+## Verificación automática en CI (GitHub Actions)
+
+El flujo definido en `.github/workflows/quality.yml` se activa automáticamente en:
+- **`push`** (cambios enviados al repositorio).
+- **`pull_request`** (solicitudes de integración / cambio).
+
+### Controles ejecutados
+Cada paso del job `verify` tiene un nombre explícito para identificar rápidamente qué control falló sin revisar todo el log:
+1. **Install dependencies** (`npm ci`): instalación reproducible desde `package-lock.json`.
+2. **Audit dependencies** (`npm audit --audit-level=high || true`): revisión de vulnerabilidades conocidas en dependencias (las incidencias detectadas se revisan de forma controlada sin forzar cambios mayores que rompan el entorno).
+3. **Run linter** (`npm run lint`): análisis estático con `oxlint --type-aware src/ test/`.
+4. **Run unit tests** (`npm test -- --runInBand`): ejecución secuencial de pruebas unitarias bajo ESM estricto.
+5. **Build project** (`npm run build`): compilación del proyecto con `nest build`.
