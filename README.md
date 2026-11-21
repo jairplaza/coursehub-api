@@ -50,3 +50,51 @@ Crea un archivo `.env` en la raíz del proyecto basándote en la plantilla del a
 - **Variables de Entorno:** Los secretos (como `JWT_SECRET` y credenciales de base de datos) residen exclusivamente en las variables de entorno del servidor y nunca deben ser hardcodeados.
 - **Control de Tasas (Rate Limiting):** Rutas críticas como el inicio de sesión (`POST /auth/login`) están limitadas estrictamente a 5 intentos por minuto mediante `@nestjs/throttler` para mitigar ataques de fuerza bruta.
 - **CORS:** Configurado explícitamente en `main.ts` para aceptar únicamente los orígenes web autorizados del cliente.
+
+## Pruebas unitarias
+
+Ejecutar todas las pruebas unitarias:
+
+```bash
+npm test
+npm test -- update-course
+
+## Pruebas End-to-End (E2E) — Sesión 25
+
+Las pruebas E2E se ejecutan con **Jest** y **Supertest** contra una base de datos PostgreSQL aislada (`coursehub_test`) para no alterar los datos de desarrollo.
+
+### Configuración del entorno de pruebas
+
+1. Crear una base de datos en PostgreSQL llamada `coursehub_test`.
+2. Configurar el archivo `.env.test` en la raíz del proyecto con las credenciales de prueba y un `JWT_SECRET` de al menos 32 caracteres (asegurándote de que `.env.test` esté incluido en `.gitignore` si contiene datos locales).
+3. `AppModule` carga `.env.test` cuando `NODE_ENV=test` y habilita la sincronización de TypeORM únicamente en `development` y `test`.
+
+### Casos cubiertos (`test/app.e2e-spec.ts`)
+
+- **`GET /courses`**: verifica respuesta `200` con estructura paginada (`items` y `meta`) para un usuario autenticado con JWT.
+- **`POST /courses`**: verifica creación (`201`) para un usuario autenticado con rol autorizado (`teacher`) y valida los datos creados.
+- **Seguridad (`401` y `403`)**: comprueba que `POST /courses` rechaza peticiones sin token (`401`) y peticiones autenticadas con rol insuficiente (`student` -> `403`).
+- **Aislamiento y repetibilidad**: limpia registros entre pruebas (`beforeAll`, `afterEach`, `afterAll`) para que múltiples ejecuciones consecutivas produzcan el mismo resultado.
+
+### Ejecución en Windows (`cmd`)
+
+```cmd
+set NODE_ENV=test&& npm run test:e2e
+
+# coursehub-api
+
+API backend desarrollada con NestJS, TypeScript, TypeORM y PostgreSQL.
+
+## Verificación automática en CI (GitHub Actions)
+
+El flujo definido en `.github/workflows/quality.yml` se activa automáticamente en:
+- **`push`** (cambios enviados al repositorio).
+- **`pull_request`** (solicitudes de integración / cambio).
+
+### Controles ejecutados
+Cada paso del job `verify` tiene un nombre explícito para identificar rápidamente qué control falló sin revisar todo el log:
+1. **Install dependencies** (`npm ci`): instalación reproducible desde `package-lock.json`.
+2. **Audit dependencies** (`npm audit --audit-level=high || true`): revisión de vulnerabilidades conocidas en dependencias (las incidencias detectadas se revisan de forma controlada sin forzar cambios mayores que rompan el entorno).
+3. **Run linter** (`npm run lint`): análisis estático con `oxlint --type-aware src/ test/`.
+4. **Run unit tests** (`npm test -- --runInBand`): ejecución secuencial de pruebas unitarias bajo ESM estricto.
+5. **Build project** (`npm run build`): compilación del proyecto con `nest build`.
