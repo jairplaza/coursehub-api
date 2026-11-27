@@ -10,6 +10,7 @@ import { StudentsModule } from './students/students.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { AuthModule } from './auth/auth.module';
     EnrollmentsModule,
     UsersModule,
     AuthModule,
+    NotificationsModule,
   ],
   providers: [
     {
@@ -69,3 +71,4 @@ export class AppModule implements NestModule {
     consumer.apply(RequestLoggerMiddleware).forRoutes('*');
   }
 }
+

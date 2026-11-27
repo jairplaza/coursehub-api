@@ -98,3 +98,45 @@ Cada paso del job `verify` tiene un nombre explícito para identificar rápidame
 3. **Run linter** (`npm run lint`): análisis estático con `oxlint --type-aware src/ test/`.
 4. **Run unit tests** (`npm test -- --runInBand`): ejecución secuencial de pruebas unitarias bajo ESM estricto.
 5. **Build project** (`npm run build`): compilación del proyecto con `nest build`.
+
+## Docker y preparación de producción (Sesión 29)
+
+### 1. Construcción de la imagen
+Se utiliza un `Dockerfile` multietapa (`node:22` para compilar `dist/` y `node:22-slim` para ejecutar en producción con `npm ci --omit=dev`) junto con `.dockerignore` para excluir archivos locales y secretos.
+
+```cmd
+docker build -t coursehub-api:s29 .
+
+docker run --rm --name coursehub-s29 -p 3000:3000 \
+  -e NODE_ENV=production \
+  -e PORT=3000 \
+  -e DATABASE_HOST=host.docker.internal \
+  -e DATABASE_PORT=5432 \
+  -e DATABASE_NAME=coursehub \
+  -e DATABASE_USER=postgres \
+  -e DATABASE_PASSWORD=tu_password_local \
+  -e JWT_SECRET=secreto_de_practica_minimo_32_caracteres \
+  -e JWT_EXPIRES_IN=45m \
+  coursehub-api:s29
+
+## Carga básica y extensión WebSocket (Sesión 30)
+
+### 1. Prueba de carga básica local
+Con el servidor ejecutándose en `http://localhost:3000`, se lanzaron 10 peticiones secuenciales a `/v1/courses` desde PowerShell:
+
+`1..10 | ForEach-Object { curl.exe -s -o NUL -w "Peticion $_ -> HTTP %{http_code} | Tiempo: %{time_total}s`n" http://localhost:3000/v1/courses }`
+
+* **Respuesta observada:** `HTTP 401` (esperado al consultar sin token JWT).
+* **Latencia observada:** ~`0.068s` en la primera petición y entre ~`0.0045s` y ~`0.0092s` en las siguientes.
+
+### 2. Extensión tecnológica: WebSocket (`/notifications`)
+* **Dependencias:** `@nestjs/websockets`, `@nestjs/platform-socket.io`, `socket.io`.
+* **Arquitectura:** `NotificationsModule` y `NotificationsGateway` (namespace `/notifications`, evento `course.created`), integrado en `AppModule` sin alterar los endpoints REST ni los guards existentes.
+
+### 3. Cómo iniciar y comprobar
+1. Compilar y arrancar la aplicación (asegurando que el puerto `3000` esté libre):
+   `npx.cmd tsc` y luego `npm.cmd run start:dev`
+2. Verificar conexión WebSocket hacia `/notifications`:
+   `node -e "const ws = new WebSocket('ws://localhost:3000/socket.io/?EIO=4&transport=websocket&nsp=/notifications'); ws.onopen = () => { console.log('Socket conectado a /socket.io/ (/notifications)'); ws.close(); }; ws.onerror = (e) => { console.error('Error:', e.message || e); };"`
+
+   
