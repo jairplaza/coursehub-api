@@ -40,17 +40,24 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     const user = await this.validateCredentials(dto.email, dto.password);
-    
+
     // Incluimos 'role' en el payload para que el RolesGuard pueda leerlo del JWT
-    const payload: JwtPayload = { 
-      sub: user.id, 
-      email: user.email, 
-      role: user.role 
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
     };
+
+    const safeUser =
+      typeof user === 'object' && user !== null && 'passwordHash' in user
+        ? Object.fromEntries(
+            Object.entries(user).filter(([key]) => key !== 'passwordHash'),
+          )
+        : user;
 
     return {
       accessToken: await this.jwtService.signAsync(payload),
-      user,
+      user: safeUser,
     };
   }
 }

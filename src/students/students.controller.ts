@@ -1,14 +1,14 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
-  Delete, 
-  Query, 
-  HttpCode, 
-  HttpStatus 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { CreateStudentDto } from './dto/create-student.dto';
@@ -16,7 +16,7 @@ import { UpdateStudentDto } from './dto/update-student.dto';
 import { FilterStudentsDto } from './dto/filter-students.dto';
 import { ParseSemesterPipe } from './pipes/parse-semester.pipe';
 
-@Controller('students')
+@Controller({ path: 'students', version: '1' })
 export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
 
@@ -47,8 +47,8 @@ export class StudentsController {
   // 5. Modificación parcial de un estudiante
   @Patch(':id')
   update(
-    @Param('id') id: string, 
-    @Body() updateStudentDto: UpdateStudentDto
+    @Param('id') id: string,
+    @Body() updateStudentDto: UpdateStudentDto,
   ) {
     return this.studentsService.update(id, updateStudentDto);
   }
@@ -56,8 +56,8 @@ export class StudentsController {
   // 6. Cambiar exclusivamente el estado activo/inactivo
   @Patch(':id/status')
   changeStatus(
-    @Param('id') id: string, 
-    @Body('isActive') isActive?: boolean
+    @Param('id') id: string,
+    @Body('isActive') isActive?: boolean,
   ) {
     return this.studentsService.changeStatus(id, isActive);
   }
